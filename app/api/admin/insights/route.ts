@@ -210,9 +210,12 @@ export async function GET() {
     };
 
     // Generate AI insights
-    const { text } = await generateText({
-      model: gateway("anthropic/claude-sonnet-4"),
-      system: `You are an expert e-commerce analytics assistant. Analyze the provided store data and generate actionable insights for the store admin.
+    let aiText: string | null = null;
+    if (process.env.ENABLE_AI_INSIGHTS !== "false") {
+      try {
+        const { text } = await generateText({
+          model: gateway("anthropic/claude-sonnet-4"),
+          system: `You are an expert e-commerce analytics assistant. Analyze the provided store data and generate actionable insights for the store admin.
 
 Your response must be valid JSON with this exact structure:
 {
@@ -239,12 +242,17 @@ Guidelines:
 - Keep highlights, alerts, and recommendations concise (under 100 characters each)
 - Focus on what the admin can do TODAY
 - Use £ for currency`,
-      prompt: `Analyze this e-commerce store data and provide insights:
+          prompt: `Analyze this e-commerce store data and provide insights:
 
 ${JSON.stringify(dataSummary, null, 2)}
 
 Generate insights in the required JSON format.`,
-    });
+        });
+        aiText = text;
+      } catch (error) {
+        console.error("AI insights generation failed, using fallback:", error);
+      }
+    }
 
     // Parse AI response
     let insights: {
@@ -266,7 +274,10 @@ Generate insights in the required JSON format.`,
     };
     try {
       // Extract JSON from the response (in case there's extra text)
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!aiText) {
+        throw new Error("AI response missing");
+      }
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         insights = JSON.parse(jsonMatch[0]);
       } else {

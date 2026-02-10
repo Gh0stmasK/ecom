@@ -8,6 +8,7 @@ import { ORDERS_BY_USER_QUERY } from "@/sanity/queries/orders";
 import { getOrderStatus } from "@/lib/constants/orderStatus";
 import { formatPrice, formatDate, formatOrderNumber } from "@/lib/utils";
 import { StackedProductImages } from "@/components/app/StackedProductImages";
+import type { ORDERS_BY_USER_QUERYResult } from "@/sanity.types";
 
 export const metadata = {
   title: "Your Orders | Furniture Shop",
@@ -48,11 +49,11 @@ export default async function OrdersPage() {
       </div>
 
       <div className="space-y-4">
-        {orders.map((order) => {
+        {orders.map((order: ORDERS_BY_USER_QUERYResult[number]) => {
           const status = getOrderStatus(order.status);
           const StatusIcon = status.icon;
           const images = (order.itemImages ?? []).filter(
-            (url): url is string => url !== null,
+            (url: unknown): url is string => url !== null,
           );
 
           return (
